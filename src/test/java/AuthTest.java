@@ -1,18 +1,19 @@
 
-import dto.RegistrationDto;
+import com.codeborne.selenide.Condition;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import utils.RequestSpecificationGenerator;
+import utils.UserRegistrar;
 import utils.UserDataGenerator;
 
 import java.time.Duration;
 
 import static com.codeborne.selenide.Condition.hidden;
 import static com.codeborne.selenide.Condition.visible;
+import static com.codeborne.selenide.Selectors.withText;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
-import static io.restassured.RestAssured.given;
 
 class AuthTest {
     private static final String BASE_URI = "http://localhost";
@@ -27,25 +28,8 @@ class AuthTest {
     @BeforeAll
     static void setUpAll() {
         RequestSpecification requestSpecification = RequestSpecificationGenerator.getRequestSpec(BASE_URI, PORT);
-        given()
-                .spec(requestSpecification)
-                .body(new RegistrationDto(LOGIN, PASSWORD, "active"))
-
-                .when()
-                .post(SERVICE_ENDPOINT)
-
-                .then()
-                .statusCode(200);
-
-        given()
-                .spec(requestSpecification)
-                .body(new RegistrationDto(BLOCKED_PASSWORD, BLOCKED_PASSWORD, "blocked"))
-
-                .when()
-                .post(SERVICE_ENDPOINT)
-
-                .then()
-                .statusCode(200);
+        UserRegistrar.registerUser(requestSpecification, SERVICE_ENDPOINT, LOGIN, PASSWORD, "active");
+        UserRegistrar.registerUser(requestSpecification, SERVICE_ENDPOINT, BLOCKED_LOGIN, BLOCKED_PASSWORD, "blocked");
     }
 
     @Test
@@ -55,6 +39,7 @@ class AuthTest {
         $("[data-test-id=password] input").setValue(PASSWORD);
         $("[data-test-id=action-login]").click();
         $("[data-test-id=error-notification]").shouldBe(hidden, Duration.ofSeconds(15));
+        $(withText("Личный кабинет")).shouldBe(visible, Duration.ofSeconds(15));
     }
 
     @Test
@@ -64,6 +49,7 @@ class AuthTest {
         $("[data-test-id=password] input").setValue(UserDataGenerator.generateData().getPassword());
         $("[data-test-id=action-login]").click();
         $("[data-test-id=error-notification]").shouldBe(visible, Duration.ofSeconds(15));
+        $("[data-test-id=error-notification] .notification__content").shouldHave(Condition.exactText("Ошибка! Неверно указан логин или пароль"));
     }
 
     @Test
@@ -73,6 +59,7 @@ class AuthTest {
         $("[data-test-id=password] input").setValue(PASSWORD);
         $("[data-test-id=action-login]").click();
         $("[data-test-id=error-notification]").shouldBe(visible, Duration.ofSeconds(15));
+        $("[data-test-id=error-notification] .notification__content").shouldHave(Condition.exactText("Ошибка! Неверно указан логин или пароль"));
     }
 
     @Test
@@ -82,5 +69,6 @@ class AuthTest {
         $("[data-test-id=password] input").setValue(BLOCKED_PASSWORD);
         $("[data-test-id=action-login]").click();
         $("[data-test-id=error-notification]").shouldBe(visible, Duration.ofSeconds(15));
+        $("[data-test-id=error-notification] .notification__content").shouldHave(Condition.exactText("Ошибка! Пользователь заблокирован"));
     }
 }

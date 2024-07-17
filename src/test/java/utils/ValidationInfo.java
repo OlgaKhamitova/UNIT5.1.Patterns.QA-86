@@ -1,15 +1,9 @@
 package utils;
-import lombok.Getter;
+import lombok.Value;
 
 
-@Getter
+@Value
 public class ValidationInfo {
-    private final String login;
-    private final String password;
-
-
-    public ValidationInfo(String login, String password) {
-        this.login = login;
-        this.password = password;
-    }
+    String login;
+    String password;
 }
